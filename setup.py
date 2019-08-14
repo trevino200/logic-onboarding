@@ -23,6 +23,8 @@ if __name__ == "__main__":
     setup(use_pyscaffold=True,
           install_requires=[
               "azure-mgmt-network",
+              "azure-mgmt-resource",
+              "azure-mgmt-storage==4.0.0",
               "msrestazure",
               "adal"
           ])
