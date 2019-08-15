@@ -1,1 +1,1 @@
-Copyright 2019 yotamho
+Copyright 2019 Check Point Software Technologies Ltd.
