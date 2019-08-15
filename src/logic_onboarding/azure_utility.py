@@ -13,6 +13,7 @@ from azure.mgmt.storage import StorageManagementClient
 
 AZURE_DIRECTORY_NAME = ".azure"
 PROFILE_FILE_NAME = "azureProfile.json"
+STORAGE_ACCOUNTS_KEY = 'key1'
 
 AUTO_GENERATED_STORAGE_ACCOUNT_SUFFIX = "_flow_logs"
 
@@ -21,12 +22,14 @@ profile_path = os.path.join(os.path.expanduser("~"), AZURE_DIRECTORY_NAME, PROFI
 
 def choose(ls, resource_type, name_extactor = lambda x: x):
     if len(ls) > 0:
-        print("\n\nchoose `" + resource_type + "` to activate flow-logs on\n")
+        print("\nchoose `" + resource_type + "` to activate flow-logs on")
         for i, item in enumerate(ls, 1):
             print("(%d)\t %s" % (i, name_extactor(item)))
-        return ls[int(input("\ninput: ")) - 1]
+        option = ls[int(input("Input: ")) - 1]
+        print("You Chose: " + name_extactor(option) + "\n")
+        return option
     else:
-        print("\n\nno " + resource_type + " configured, please configure and re-run the script")
+        print("no " + resource_type + " configured, please configure and re-run the script")
         exit(1)
 
 
@@ -108,7 +111,18 @@ def configure():
                 }
             })
         print("enabled flow-logs for nsg " + nsg.name)
+    return {
+        "subscription_id": subscription_id,
+        "resource_group": rg.name,
+        "storage_accounts": [{
+            "name": sa.name,
+            "key": next(filter(lambda x: x.key_name == STORAGE_ACCOUNTS_KEY, storage_client.storage_accounts.list_keys(rg.name, sa.name).keys)).value
+        } for sa in storage_accounts.values()]
+    }
 
 
-if __name__ == "__main__":
-    configure()
+def run(out_path):
+    onboarding_json = configure()
+    with open(out_path, 'w') as out_file:
+        json.dump(onboarding_json, out_file)
+        print("saved log.ic configuration file on " + out_path)

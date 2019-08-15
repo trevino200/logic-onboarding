@@ -62,7 +62,10 @@ def parse_args(args):
         version="logic-onboarding {ver}".format(ver=__version__))
     parser.add_argument(
         dest="cloud",
-        help="choose a cloud to commence onboarding",)
+        help="choose a cloud configure log.ic on")
+    parser.add_argument(
+        dest="out-path",
+        help="output path for the log.ic configuration file")
     return parser.parse_args(args)
 
 
@@ -84,9 +87,8 @@ def main(args):
       args ([str]): command line parameter list
     """
     args = parse_args(args)
-    setup_logging(args.loglevel)
     if args.cloud.lower() == "azure":
-        azure_utility.configure()
+        azure_utility.run(getattr(args, 'out-path'))
     else:
         print("cloud is not supported yet")
 
