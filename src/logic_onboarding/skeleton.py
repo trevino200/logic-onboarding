@@ -20,6 +20,7 @@ import sys
 import logging
 
 from logic_onboarding import __version__
+from logic_onboarding import azure_utility
 
 __author__ = "yotamho"
 __copyright__ = "yotamho"
@@ -54,30 +55,14 @@ def parse_args(args):
       :obj:`argparse.Namespace`: command line parameters namespace
     """
     parser = argparse.ArgumentParser(
-        description="Just a Fibonacci demonstration")
+        description="Onboarding script for Log.ic")
     parser.add_argument(
         "--version",
         action="version",
         version="logic-onboarding {ver}".format(ver=__version__))
     parser.add_argument(
-        dest="n",
-        help="n-th Fibonacci number",
-        type=int,
-        metavar="INT")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO)
-    parser.add_argument(
-        "-vv",
-        "--very-verbose",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG)
+        dest="cloud",
+        help="choose a cloud to commence onboarding",)
     return parser.parse_args(args)
 
 
@@ -100,9 +85,10 @@ def main(args):
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
-    _logger.debug("Starting crazy calculations...")
-    print("The {}-th Fibonacci number is {}".format(args.n, fib(args.n)))
-    _logger.info("Script ends here")
+    if args.cloud.lower() == "azure":
+        azure_utility.configure()
+    else:
+        print("cloud is not supported yet")
 
 
 def run():

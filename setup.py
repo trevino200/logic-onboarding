@@ -22,9 +22,9 @@ except VersionConflict:
 if __name__ == "__main__":
     setup(use_pyscaffold=True,
           install_requires=[
-              "azure-mgmt-network",
-              "azure-mgmt-resource",
+              "azure-mgmt-network==4.0.0",
+              "azure-mgmt-resource==3.1.0",
               "azure-mgmt-storage==4.0.0",
-              "msrestazure",
-              "adal"
+              "msrestazure==0.6.1",
+              "adal==1.2.2"
           ])

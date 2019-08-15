@@ -2,6 +2,7 @@ import errno
 import json
 import os
 import subprocess
+from time import sleep
 
 import adal
 from msrestazure.azure_active_directory import AADTokenCredentials
@@ -18,11 +19,16 @@ AUTO_GENERATED_STORAGE_ACCOUNT_SUFFIX = "_flow_logs"
 profile_path = os.path.join(os.path.expanduser("~"), AZURE_DIRECTORY_NAME, PROFILE_FILE_NAME)
 
 
-def choose(ls, text, name_extactor = lambda x: x):
-    print("\n\n" + text + "\n")
-    for i, item in enumerate(ls, 1):
-        print("(%d)\t %s" % (i, name_extactor(item)))
-    return ls[int(input("\ninput: ")) - 1]
+def choose(ls, resource_type, name_extactor = lambda x: x):
+    if len(ls) > 0:
+        print("\n\nchoose `" + resource_type + "` to activate flow-logs on\n")
+        for i, item in enumerate(ls, 1):
+            print("(%d)\t %s" % (i, name_extactor(item)))
+        return ls[int(input("\ninput: ")) - 1]
+    else:
+        print("\n\nno " + resource_type + " configured, please configure and re-run the script")
+        exit(1)
+
 
 def get_credentials():
     # EAFP check Azure CLI is installed
@@ -41,7 +47,7 @@ def get_credentials():
     if os.path.exists(profile_path):
         with open(profile_path, 'rb') as profile_file:
             profile = json.load(profile_file)
-            subscription = choose(profile['subscriptions'], "Please choose the account that you want to configure:", lambda x: x['name'])
+            subscription = choose(profile['subscriptions'], "account", lambda x: x['name'])
             return subscription['id'], subscription['tenantId']
     else:
         print(
@@ -67,30 +73,42 @@ def authenticate_device_code(tenant_id):
     return credentials
 
 
-def configure(container_name):
+def configure():
     subscription_id, tenant_id = get_credentials()
     credentials = authenticate_device_code(tenant_id)
     resource_client = ResourceManagementClient(credentials, subscription_id)
     network_client = NetworkManagementClient(credentials, subscription_id)
     storage_client = StorageManagementClient(credentials, subscription_id)
-    rg = choose(list(resource_client.resource_groups.list()), "Choose the resource group to activate flow-logs on:", lambda x: x.name)
-    nsgs = [nsg for nsg in network_client.network_security_groups.list(rg.name)]
-    if len(nsgs) > 0:
-        storage_account = choose(list(storage_client.storage_accounts.list_by_resource_group(rg.name)), "Choose the storage account to export logs to:", lambda x: x.name)
-        nsg = choose(list(nsgs), "Choose the nsg to activate flow-logs on:", lambda x: x.name)
-        # CREATE NETWORK WATCHER??
+    rg = choose(list(resource_client.resource_groups.list()), "resource group", lambda x: x.name)
+
+    storage_accounts = {}
+
+    print("Configuring flow logs for all network security groups in resource group " + rg.name)
+    for nsg in network_client.network_security_groups.list(rg.name):
+        nw_name = "NetworkWatcher_" + nsg.location
+        if nsg.location not in storage_accounts:
+
+            network_client.network_watchers.create_or_update("NetworkWatcherRG", nw_name, {
+                "enabled": "true",
+                "location": nsg.location
+            })
+            sleep(3) # waiting for resource to be truly created
+            print("enabled default network watcher for " + nsg.location + " location")
+
+            available_storage_accounts = [sa for sa in storage_client.storage_accounts.list_by_resource_group(rg.name) if sa.location == nsg.location]
+            storage_accounts[nsg.location] = choose(available_storage_accounts, "storage account for " + nsg.location + " location", lambda x: x.name)
         network_client.network_watchers.set_flow_log_configuration(
-            rg.name, "logic_flow_logs_" + rg.name, {
+            "NetworkWatcherRG", nw_name, {
                 "enabled": "true",
                 "target_resource_id": nsg.id,
-                "storage_id": storage_account.id
-                # "format": {"value": "JSON"},
-                # "log-version": {"value": "2"}
+                "storage_id": storage_accounts[nsg.location].id,
+                "format": {
+                    "type": "JSON",
+                    "version": "2"
+                }
             })
-    else:
-        print("No storage accounts configured for resource group,"
-              " please configure one manually so you will be able to dump the logs there.")
+        print("enabled flow-logs for nsg " + nsg.name)
 
 
 if __name__ == "__main__":
-    configure("kaki")
+    configure()
