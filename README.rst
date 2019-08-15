@@ -2,18 +2,18 @@
 logic-onboarding
 ================
 
+This script configures cloud environment to connect to Log.ic
 
-Add a short description here!
+Installation
+============
 
+.. code-block:: bash
 
-Description
-===========
+    python3 setup.py install
 
-A longer description of your project goes here...
+Usage
+=====
 
+.. code-block:: bash
 
-Note
-====
-
-This project has been set up using PyScaffold 3.2.1. For details and usage
-information on PyScaffold see https://pyscaffold.org/.
+    logic_onboarding [-h] [--version] cloud out-path
