@@ -29,7 +29,7 @@ def choose(ls, resource_type, name_extactor=lambda x: x, additional_description=
         print("You Chose: " + name_extactor(option) + "\n")
         return option
     else:
-        print("no " + resource_type + " configured, please configure and re-run the script")
+        print("no `" + resource_type + "` configured, please configure and re-run the script")
         exit(1)
 
 
@@ -87,7 +87,8 @@ def configure():
     storage_accounts = {}
 
     print("Configuring flow logs for all network security groups in resource group " + rg.name)
-    for nsg in network_client.network_security_groups.list(rg.name):
+    nsgs = list(network_client.network_security_groups.list(rg.name))
+    for nsg in nsgs:
         nw_name = "NetworkWatcher_" + nsg.location
         if nsg.location not in storage_accounts:
             network_client.network_watchers.create_or_update("NetworkWatcherRG", nw_name, {
@@ -121,7 +122,8 @@ def configure():
         "storage_accounts": [{
             "name": sa.name,
             "key": next(filter(lambda x: x.key_name == STORAGE_ACCOUNTS_KEY,
-                               storage_client.storage_accounts.list_keys(rg.name, sa.name).keys)).value
+                               storage_client.storage_accounts.list_keys(rg.name, sa.name).keys)).value,
+            "network_security_groups": [nsg.name for nsg in nsgs if nsg.location == sa.location]
         } for sa in storage_accounts.values()]
     }
 
