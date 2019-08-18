@@ -37,7 +37,7 @@ def get_credentials():
     # EAFP check Azure CLI is installed
     try:
         FNULL = open(os.devnull, 'w')
-        subprocess.call(["az", "--help"], stdout=FNULL, stderr=subprocess.STDOUT)
+        subprocess.call(["az", "--help"], stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
     except OSError as e:
         if e.errno == errno.ENOENT:
             print("Azure CLI is not installed, please install it."
