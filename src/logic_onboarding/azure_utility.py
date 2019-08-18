@@ -5,11 +5,10 @@ import subprocess
 from time import sleep
 
 import adal
-from msrestazure.azure_active_directory import AADTokenCredentials
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
-
+from msrestazure.azure_active_directory import AADTokenCredentials
 
 AZURE_DIRECTORY_NAME = ".azure"
 PROFILE_FILE_NAME = "azureProfile.json"
@@ -20,9 +19,10 @@ AUTO_GENERATED_STORAGE_ACCOUNT_SUFFIX = "_flow_logs"
 profile_path = os.path.join(os.path.expanduser("~"), AZURE_DIRECTORY_NAME, PROFILE_FILE_NAME)
 
 
-def choose(ls, resource_type, name_extactor = lambda x: x):
+def choose(ls, resource_type, name_extactor=lambda x: x, additional_description=None):
     if len(ls) > 0:
-        print("\nchoose `" + resource_type + "` to activate flow-logs on")
+        if additional_description: print(additional_description)
+        print("\nchoose `" + resource_type + "` to activate flow-logs on:")
         for i, item in enumerate(ls, 1):
             print("(%d)\t %s" % (i, name_extactor(item)))
         option = ls[int(input("Input: ")) - 1]
@@ -90,16 +90,20 @@ def configure():
     for nsg in network_client.network_security_groups.list(rg.name):
         nw_name = "NetworkWatcher_" + nsg.location
         if nsg.location not in storage_accounts:
-
             network_client.network_watchers.create_or_update("NetworkWatcherRG", nw_name, {
                 "enabled": "true",
                 "location": nsg.location
             })
-            sleep(3) # waiting for resource to be truly created
+            sleep(3)  # waiting for resource to be truly created
             print("enabled default network watcher for " + nsg.location + " location")
 
-            available_storage_accounts = [sa for sa in storage_client.storage_accounts.list_by_resource_group(rg.name) if sa.location == nsg.location]
-            storage_accounts[nsg.location] = choose(available_storage_accounts, "storage account for " + nsg.location + " location", lambda x: x.name)
+            available_storage_accounts = [sa for sa in storage_client.storage_accounts.list_by_resource_group(rg.name)
+                                          if sa.location == nsg.location]
+            storage_accounts[nsg.location] = choose(available_storage_accounts,
+                                                    "storage account for " + nsg.location + " location",
+                                                    lambda x: x.name,
+                                                    "It is highly recommended to have a dedicated storage account for Flow-Logs, "
+                                                    "if you dont have any, please configure one in the Azure Portal and re-run the script to choose it")
         network_client.network_watchers.set_flow_log_configuration(
             "NetworkWatcherRG", nw_name, {
                 "enabled": "true",
@@ -116,7 +120,8 @@ def configure():
         "resource_group": rg.name,
         "storage_accounts": [{
             "name": sa.name,
-            "key": next(filter(lambda x: x.key_name == STORAGE_ACCOUNTS_KEY, storage_client.storage_accounts.list_keys(rg.name, sa.name).keys)).value
+            "key": next(filter(lambda x: x.key_name == STORAGE_ACCOUNTS_KEY,
+                               storage_client.storage_accounts.list_keys(rg.name, sa.name).keys)).value
         } for sa in storage_accounts.values()]
     }
 
