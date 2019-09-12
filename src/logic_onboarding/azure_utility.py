@@ -51,7 +51,7 @@ def get_credentials():
         with open(profile_path, 'rb') as profile_file:
             profile = json.load(profile_file)
             if 'subscriptions' in profile:
-                subscription = choose(profile['subscriptions'], "account", lambda x: x['name'])
+                subscription = choose(profile['subscriptions'], "subscription", lambda x: x['name'])
                 return subscription['id'], subscription['tenantId']
     print(
         "azure connection files were not initialized, please run `az login` and then run the onboarding script again")
