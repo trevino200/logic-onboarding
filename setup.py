@@ -20,7 +20,9 @@ except VersionConflict:
 
 
 if __name__ == "__main__":
-    setup(use_pyscaffold=True,
+    setup(name="logic-onboarding",
+          version="0.1",
+          use_pyscaffold=True,
           install_requires=[
               "azure-mgmt-network==4.0.0",
               "azure-mgmt-resource==3.1.0",
