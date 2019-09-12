@@ -50,12 +50,12 @@ def get_credentials():
     if os.path.exists(profile_path):
         with open(profile_path, 'rb') as profile_file:
             profile = json.load(profile_file)
-            subscription = choose(profile['subscriptions'], "account", lambda x: x['name'])
-            return subscription['id'], subscription['tenantId']
-    else:
-        print(
-            "azure connection files were not initialized, please run `az login` and then run the onboarding script again")
-        exit(1)
+            if 'subscriptions' in profile:
+                subscription = choose(profile['subscriptions'], "account", lambda x: x['name'])
+                return subscription['id'], subscription['tenantId']
+    print(
+        "azure connection files were not initialized, please run `az login` and then run the onboarding script again")
+    exit(1)
 
 
 def authenticate_device_code(tenant_id):
