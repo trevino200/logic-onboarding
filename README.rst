@@ -15,11 +15,17 @@ Before running the script make sure that:
 * Each location of NSGs under the ResourceGroup that should be on-boarded to Logic has a 
   StorageAccount (Highly recommended that the StorageAccount is dedicated to flow logs).
 * Make sure that your Azure subscription has the Microsoft.Insights enabled:
+
   1. go to the Azure Portal
+  
   2. Subscriptions
+  
   3. Click your subscription name
+  
   4. Find `microsoft.insights` in the list 
+  
   5. Make sure that it is enabled, if not click it and then click "Register"
+ 
 
  
   Keep in mind that flow logs must be sent to StorageAccount in the same location as the 
